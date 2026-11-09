@@ -1,0 +1,27 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+html.theme-transition,
+html.theme-transition * {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, box-shadow;
+    transition-duration: 450ms;
+    transition-timing-function: ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html.theme-transition,
+    html.theme-transition * {
+        transition-duration: 0.01ms;
+    }
+}
+@source "../views/auth/login.blade.php";
+@source "../views/components/ticket-ecosystem.blade.php";
+
+

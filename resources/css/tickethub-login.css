@@ -1,0 +1,679 @@
+@import "tailwindcss";
+@source "../views/auth/login.blade.php";
+@source "../views/components/ticket-ecosystem.blade.php";
+@custom-variant dark (&:where([data-th-theme="dark"], [data-th-theme="dark"] *));
+@theme {
+    --color-ticket-blue: #2563eb;
+    --color-ticket-navy: #172554;
+}
+/* All selectors are scoped to this page. Load only on the auth layout. */
+.th-login {
+    --bg: #f4f7fc;
+    --surface: #fff;
+    --ink: #172554;
+    --muted: #64748b;
+    --border: #dce6f5;
+    --field: #fff;
+    --visual: #eef4ff;
+    --card: #fff;
+    --error: #b91c1c;
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+}
+[data-th-theme="dark"] .th-login {
+    --bg: #0c1426;
+    --surface: #111e34;
+    --ink: #eef3ff;
+    --muted: #a6b6d1;
+    --border: #2a3b57;
+    --field: #14233b;
+    --visual: #152440;
+    --card: #1d3151;
+    --error: #fda4af;
+    color-scheme: dark;
+}
+.th-login * {
+    box-sizing: border-box;
+}
+.th-login button,
+.th-login input {
+    font: inherit;
+}
+.th-login button,
+.th-login a {
+    -webkit-tap-highlight-color: transparent;
+}
+.th-login button {
+    cursor: pointer;
+}
+.th-login button:focus-visible,
+.th-login a:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 4px;
+}
+.th-shell {
+    min-height: 100svh;
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    padding: 16px;
+    gap: 16px;
+    max-width: 1800px;
+    margin: auto;
+}
+.th-form-section {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 30px 36px;
+}
+.th-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+.th-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+    font-size: 20px;
+    letter-spacing: -0.7px;
+    font-weight: 750;
+    text-decoration: none;
+}
+.th-brand svg {
+    width: 38px;
+    height: 38px;
+}
+.th-theme {
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--ink);
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+    display: grid;
+    place-items: center;
+}
+.th-theme:hover {
+    background: var(--bg);
+}
+.th-form-wrap {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    padding: 70px 0;
+}
+.th-form-card {
+    width: 100%;
+    max-width: 370px;
+}
+.th-eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+}
+.th-eyebrow > span,
+.th-label > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2563eb;
+}
+.th-form-card h1 {
+    font-size: 36px;
+    line-height: 1.2;
+    letter-spacing: -1.4px;
+    font-weight: 700;
+    margin: 20px 0 12px;
+}
+.th-subtitle {
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 0 0 36px;
+}
+.th-field {
+    margin-bottom: 19px;
+}
+.th-field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 10px;
+}
+.th-field input {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--field);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 14px 15px;
+    min-height: 50px;
+    outline: none;
+    transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
+}
+.th-field input::placeholder {
+    color: var(--muted);
+    opacity: 0.85;
+}
+.th-field input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px #2563eb24;
+}
+.th-field input[aria-invalid="true"] {
+    border-color: var(--error);
+}
+.th-error {
+    color: var(--error);
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 6px 0 0;
+}
+.th-error:empty {
+    display: none;
+}
+.th-password-wrap {
+    position: relative;
+}
+.th-password-wrap input {
+    padding-right: 55px;
+}
+.th-password-toggle {
+    position: absolute;
+    right: 5px;
+    top: 4px;
+    height: 42px;
+    width: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+}
+.th-password-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+.th-password-toggle [hidden] {
+    display: none;
+}
+.th-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 50px;
+    border: 1px solid #2563eb;
+    border-radius: 8px;
+    background: #2563eb;
+    color: white;
+    font-weight: 650;
+    margin-top: 28px;
+    box-shadow: 0 5px 14px #2563eb22;
+    transition:
+        background 0.15s,
+        transform 0.15s;
+}
+.th-submit:hover {
+    background: #1d4ed8;
+}
+.th-submit:active {
+    transform: translateY(1px);
+}
+.th-submit span {
+    font-size: 20px;
+}
+.th-secure {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 24px;
+}
+.th-secure svg {
+    width: 15px;
+    height: 15px;
+}
+.th-footer {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 12px 0 4px;
+}
+.th-visual {
+    border-radius: 18px;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 65% 35%, #c4d8ff88, transparent 55%),
+        var(--visual);
+    border: 1px solid var(--border);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px 38px;
+    min-width: 0;
+}
+.th-visual-top,
+.th-visual-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+.th-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 1.5px;
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 700;
+}
+.th-mini-mark {
+    color: #2563eb;
+    font-size: 28px;
+}
+.th-art {
+    position: relative;
+    height: 370px;
+    width: 100%;
+    max-width: 600px;
+    margin: 30px auto 0;
+    isolation: isolate;
+}
+.th-orbit {
+    position: absolute;
+    border: 1px solid #7096d525;
+    border-radius: 50%;
+    left: 50%;
+    top: 52%;
+    transform: translate(-50%, -50%) rotate(-25deg);
+    width: 95%;
+    height: 65%;
+    z-index: -1;
+}
+.th-orbit-two {
+    width: 75%;
+    height: 90%;
+    transform: translate(-50%, -50%) rotate(32deg);
+}
+.th-connections {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: #7da1df;
+    opacity: 0.5;
+}
+.th-float {
+    position: absolute;
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow:
+        0 18px 35px #17255412,
+        0 2px 2px #17255408;
+    border-radius: 14px;
+}
+.th-small-ticket {
+    left: 4%;
+    top: 8%;
+    width: 43%;
+    padding: 19px;
+    transform: rotate(-9deg);
+    opacity: 0.8;
+}
+.th-ticket-top {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+.th-ticket-id {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 650;
+}
+.th-small-ticket strong {
+    font-size: 13px;
+    display: block;
+    margin: 15px 0;
+}
+.th-dot {
+    margin-left: auto;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #a78bfa;
+}
+.th-line {
+    height: 5px;
+    border-radius: 4px;
+    background: var(--border);
+    width: 85%;
+    margin-bottom: 8px;
+}
+.th-line-short {
+    width: 55%;
+    margin-bottom: 15px;
+}
+.th-pill {
+    font-size: 9px;
+    padding: 5px 8px;
+    color: #1d4ed8;
+    background: #dbeafe;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-weight: 600;
+}
+.th-violet {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+.th-main-ticket {
+    left: 18%;
+    top: 31%;
+    width: 73%;
+    padding: 23px;
+    transform: rotate(-3deg);
+    border-color: #90b4fa;
+    box-shadow:
+        0 25px 60px #2563eb22,
+        0 3px 0 #2563eb14;
+}
+.th-main-ticket .th-pill {
+    margin-left: auto;
+}
+.th-ticket-icon {
+    display: grid;
+    place-items: center;
+    background: #2563eb;
+    color: white;
+    border-radius: 7px;
+    width: 29px;
+    height: 29px;
+    font-size: 20px;
+}
+.th-main-ticket h3 {
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    margin: 20px 0 8px;
+    line-height: 1.3;
+}
+.th-main-ticket p {
+    color: var(--muted);
+    font-size: 10px;
+}
+.th-ticket-rule {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0 14px;
+}
+.th-ticket-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--muted);
+}
+.th-ticket-bottom b {
+    margin-left: 8px;
+    color: #2563eb;
+    font-size: 17px;
+}
+.th-avatars {
+    display: flex;
+    padding-left: 4px;
+}
+.th-avatars span {
+    border: 2px solid var(--card);
+    background: #dbeafe;
+    color: #1d4ed8;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    margin-left: -4px;
+    font-size: 9px;
+    font-weight: 600;
+}
+.th-avatars span:nth-child(2) {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+.th-badge {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    border: 4px solid var(--visual);
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+}
+.th-resolved {
+    right: 2%;
+    bottom: -1%;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 15px 21px;
+    transform: rotate(5deg);
+}
+.th-check {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #d1fae5;
+    color: #047857;
+}
+.th-resolved strong {
+    display: block;
+    font-size: 12px;
+}
+.th-resolved div > span {
+    display: block;
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 4px;
+}
+.th-chat {
+    top: 10%;
+    right: 6%;
+    display: flex;
+    gap: 5px;
+    padding: 18px 21px;
+    background: #2563eb;
+    border-color: #4f83f1;
+    transform: rotate(9deg);
+    border-radius: 14px 14px 14px 3px;
+}
+.th-chat span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #dbeafe;
+}
+.th-spark {
+    position: absolute;
+    color: #7c83e3;
+}
+.th-spark-one {
+    right: 8%;
+    top: 38%;
+    font-size: 29px;
+}
+.th-spark-two {
+    bottom: 9%;
+    left: 11%;
+    font-size: 25px;
+}
+.th-sphere {
+    position: absolute;
+    bottom: 6%;
+    left: 31%;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at 30% 25%,
+        #e2eaff,
+        #8dacf4 60%,
+        #6e85c9
+    );
+    box-shadow: 0 8px 12px #2563eb22;
+}
+.th-visual-copy {
+    padding: 40px 8px 35px;
+}
+.th-visual-copy h2 {
+    font-size: clamp(30px, 3.2vw, 46px);
+    line-height: 1.13;
+    font-weight: 650;
+    letter-spacing: -1.7px;
+    margin: 18px 0;
+}
+.th-visual-copy > p:last-child {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.9;
+}
+.th-visual-bottom {
+    font-size: 9px;
+    color: var(--muted);
+    padding-top: 22px;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.3px;
+}
+.th-visual-bottom i {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #2563eb;
+    margin-right: 7px;
+}
+[data-th-theme="dark"] .th-visual {
+    background:
+        radial-gradient(ellipse at 65% 35%, #3154ae40, transparent 60%),
+        radial-gradient(ellipse at 90% 70%, #7546aa20, transparent 60%),
+        var(--visual);
+}
+@media (min-width: 1500px) {
+    .th-shell {
+        min-height: 100svh;
+    }
+    .th-art {
+        height: 430px;
+        margin-top: 60px;
+    }
+    .th-visual-copy {
+        padding-bottom: 55px;
+    }
+}
+@media (max-width: 1000px) {
+    .th-form-section {
+        padding: 26px;
+    }
+    .th-visual {
+        padding: 26px 22px;
+    }
+    .th-main-ticket {
+        left: 9%;
+        width: 86%;
+        padding: 18px;
+    }
+    .th-main-ticket h3 {
+        font-size: 16px;
+    }
+    .th-small-ticket {
+        width: 55%;
+    }
+    .th-art {
+        height: 330px;
+    }
+    .th-label {
+        letter-spacing: 1px;
+        font-size: 8px;
+    }
+    .th-visual-copy h2 {
+        font-size: 34px;
+    }
+}
+@media (max-width: 760px) {
+    .th-shell {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        gap: 10px;
+    }
+    .th-form-section {
+        min-height: calc(100svh - 20px);
+        padding: 22px;
+        border-radius: 14px;
+    }
+    .th-form-wrap {
+        padding: 60px 0;
+    }
+    .th-form-card h1 {
+        font-size: 32px;
+    }
+    .th-visual {
+        min-height: 640px;
+        border-radius: 14px;
+        padding: 26px;
+    }
+    .th-art {
+        max-width: 490px;
+        height: 340px;
+    }
+    .th-visual-copy {
+        padding: 28px 8px;
+    }
+    .th-visual-copy h2 {
+        font-size: 36px;
+    }
+    .th-main-ticket {
+        left: 18%;
+        width: 73%;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .th-login * {
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
