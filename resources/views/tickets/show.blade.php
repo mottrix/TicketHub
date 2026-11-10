@@ -1,9 +1,10 @@
 @extends('components.layout')
 
 @section('content')
+    {{-- Normalize older stored status names for badges, status selection, and reply availability. --}}
     @php
         $status = ['in_progress' => 'pending', 'close' => 'closed', 'resolved' => 'closed'][$ticket->status] ?? $ticket->status;
-        $priority = strtolower($ticket->ticket_priority);
+        $priority = strtolower($ticket->priority);
         $statusLabel =
             ['open' => 'Open', 'pending' => 'Pending', 'closed' => 'Close'][
                 $status
@@ -34,13 +35,15 @@
                 </div>
                 <h1 id="ticket-title"
                     class="max-w-3xl text-3xl font-bold tracking-tight wrap-anywhere text-slate-900 dark:text-slate-100 sm:text-4xl">
-                    {{ $ticket->ticket_name }}</h1>
+                    {{ $ticket->title }}</h1>
                 <p class="text-sm leading-6 text-slate-500 dark:text-slate-400">
                     Created {{ $ticket->created_at?->format('M d, Y') }}
                     <span aria-hidden="true" class="px-1">·</span>
                     #{{ $ticketNumber }}
                 </p>
             </div>
+            {{-- This dropdown saves status immediately through its own PATCH form.
+                 The conversation preview selector below only changes the local display. --}}
             @can('updateStatus', $ticket)
             <form method="POST" action="{{ route('ticket.status.update', $ticket) }}"
                 class="w-full shrink-0 sm:ml-auto sm:w-auto">
@@ -58,20 +61,14 @@
                 @enderror
             </form>
             @endcan
-            <a href="{{ route('ticket.edit', $ticket) }}"
-                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500">
-                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                    aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="m16 4 4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15l-1 6Z" />
-                </svg>
-                Edit Ticket
-            </a>
+
         </header>
 
 
 
-        <x-ticket-conversation :resolved="in_array($status, ['closed', 'resolved'])" :ticket="$ticket" :messages="$messages" />
+        {{-- A colon on a component attribute evaluates PHP, passing the actual boolean,
+             ticket model rather than literal attribute strings. --}}
+        <x-ticket-conversation  :ticket="$ticket" />
 
         <div class="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
             <article
@@ -91,6 +88,8 @@
                     </div>
                 </header>
                 <div class="min-h-64 px-6 py-7 sm:px-8">
+                    {{-- The controller supplies plain text derived from the saved editor HTML;
+                         escaped Blade output prevents that content from becoming executable markup. --}}
                     @if (filled($descriptionText))
                         <div
                             class="whitespace-pre-wrap text-base leading-8 wrap-anywhere text-slate-700 dark:text-slate-300">

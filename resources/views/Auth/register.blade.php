@@ -36,7 +36,7 @@
                     <form method="POST" action="{{ route('register.post') }}" data-register-form>
                         @csrf
                         <div class="th-field"><label for="name">Full Name</label><input id="name"
-                                name="name" type="text" autocomplete="name" value="{{ old('name') }}"
+                                name="name" type="text" maxlength="255" autocomplete="name" value="{{ is_string(old('name')) ? old('name') : '' }}"
                                 placeholder="Enter your full name" required autofocus aria-describedby="name-error"
                                 @error('name') aria-invalid="true" @enderror>
                             <p id="name-error" class="th-error" data-error="name" aria-live="polite">
@@ -46,8 +46,8 @@
                             </p>
                         </div>
                         <div class="th-field"><label for="email">Email Address</label><input id="email"
-                                name="email" type="email" autocomplete="email" inputmode="email"
-                                value="{{ old('email') }}" placeholder="you@company.com" required
+                                name="email" type="email" maxlength="255" autocomplete="email" inputmode="email"
+                                value="{{ is_string(old('email')) ? old('email') : '' }}" placeholder="you@company.com" required
                                 aria-describedby="email-error" @error('email') aria-invalid="true" @enderror>
                             <p id="email-error" class="th-error" data-error="email" aria-live="polite">
                                 @error('email')
@@ -56,7 +56,7 @@
                             </p>
                         </div>
                         <div class="th-field"><label for="password">Password</label>
-                            <div class="th-password-wrap"><input id="password" name="password" type="password"
+                            <div class="th-password-wrap"><input id="password" name="password" type="password" minlength="8" maxlength="72"
                                     autocomplete="new-password" placeholder="Enter your password" required
                                     aria-describedby="password-error"
                                     @error('password') aria-invalid="true" @enderror><button class="th-password-toggle"
@@ -78,7 +78,7 @@
                         </div>
                         <div class="th-field"><label for="password_confirmation">Confirm Password</label>
                             <div class="th-password-wrap"><input id="password_confirmation" name="password_confirmation"
-                                    type="password" autocomplete="new-password" placeholder="Confirm your password"
+                                    type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="Confirm your password"
                                     required aria-describedby="password_confirmation-error"
                                     @error('password_confirmation') aria-invalid="true" @enderror><button
                                     class="th-password-toggle" type="button" data-confirm-toggle

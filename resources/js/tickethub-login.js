@@ -1,3 +1,5 @@
+/* Shared authentication-page behavior, also loaded by registration for its theme
+   and password toggle. The login validation below runs only when its form exists. */
 (() => {
     const root = document.documentElement;
     const themeButton = document.querySelector("[data-theme-toggle]");
@@ -28,6 +30,7 @@
             localStorage.setItem("tickethub-theme", theme);
         } catch {}
     });
+    /* Follow OS theme changes until the user has explicitly chosen a stored theme. */
     media.addEventListener("change", (event) => {
         if (!explicitTheme) applyTheme(event.matches ? "dark" : "light");
     });
@@ -47,6 +50,8 @@
     });
     const form = document.querySelector("[data-login-form]");
     if (!form) return;
+    /* Replace browser validation popups with inline messages, using native validity
+       flags. Valid forms still submit normally to Laravel for authoritative validation. */
     form.noValidate = true;
     function validate(input) {
         let message = "";

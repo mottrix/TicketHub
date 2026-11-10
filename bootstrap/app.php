@@ -5,6 +5,11 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 
+/*
+ * Application entry configuration: register browser/console routes and the
+ * health endpoint. The proxy configuration below is currently disabled.
+ * API-shaped requests receive JSON errors; ordinary page requests use HTML.
+ */
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',

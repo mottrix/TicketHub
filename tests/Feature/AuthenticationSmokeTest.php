@@ -53,6 +53,15 @@ test('login rejects an incorrect password', function () {
     $this->assertGuest();
 });
 
+test('registration remains renderable after rejecting array input', function () {
+    $this->from(route('register'))->post(route('register.post'), [
+        'name' => ['invalid'], 'email' => ['invalid'],
+        'password' => 'valid-password-123', 'password_confirmation' => 'valid-password-123',
+    ])->assertSessionHasErrors(['name', 'email']);
+
+    $this->get(route('register'))->assertOk();
+});
+
 test('logout ends authentication and protects the dashboard', function () {
     $user = User::factory()->create();
 
@@ -60,4 +69,45 @@ test('logout ends authentication and protects the dashboard', function () {
 
     $this->assertGuest();
     $this->get(route('index'))->assertRedirect(route('login'));
+});
+
+test('registration rejects invalid fields without creating an account', function (array $invalid, string $field) {
+    $payload = array_replace([
+        'name' => 'New customer', 'email' => 'new@example.test',
+        'password' => 'valid-password-123', 'password_confirmation' => 'valid-password-123',
+    ], $invalid);
+
+    $this->post(route('register.post'), $payload)->assertSessionHasErrors($field);
+
+    $this->assertDatabaseCount('users', 0);
+    $this->assertGuest();
+})->with([
+    'name must be text' => [['name' => ['invalid']], 'name'],
+    'name is bounded' => [['name' => str_repeat('a', 256)], 'name'],
+    'password must be text' => [['password' => ['invalid']], 'password'],
+    'short password' => [['password' => 'short', 'password_confirmation' => 'short'], 'password'],
+    'confirmation required' => [['password_confirmation' => null], 'password'],
+    'confirmation must match' => [['password_confirmation' => 'different-password'], 'password'],
+    'bcrypt byte limit' => [['password' => str_repeat('é', 37), 'password_confirmation' => str_repeat('é', 37)], 'password'],
+    'bcrypt null character' => [['password' => 'abcdefgh'.chr(0).'x', 'password_confirmation' => 'abcdefgh'.chr(0).'x'], 'password'],
+]);
+
+test('registration accepts a confirmed password longer than ten characters', function () {
+    $this->post(route('register.post'), [
+        'name' => 'New customer', 'email' => 'new@example.test',
+        'password' => 'a-longer-password-123', 'password_confirmation' => 'a-longer-password-123',
+    ])->assertRedirect(route('index'));
+
+    $this->assertDatabaseHas('users', ['email' => 'new@example.test', 'role' => 'user']);
+});
+
+test('repeated failed logins are rate limited', function () {
+    $user = User::factory()->create();
+
+    for ($attempt = 0; $attempt < 5; $attempt++) {
+        $this->post(route('login.post'), ['email' => $user->email, 'password' => 'incorrect'])->assertSessionHasErrors('email');
+    }
+
+    $this->post(route('login.post'), ['email' => $user->email, 'password' => 'incorrect'])->assertTooManyRequests();
+    $this->assertGuest();
 });

@@ -1,3 +1,5 @@
+/* Preview controls only switch local panels and composer availability; they do not
+   fetch messages or save ticket status. Replies use the Blade composer's normal POST form. */
 document.querySelectorAll("[data-ticket-conversation]").forEach((conversation) => {
     const stateSelect = conversation.querySelector("[data-conversation-state]");
     const scrollArea = conversation.querySelector("[data-conversation-scroll]");
@@ -10,6 +12,7 @@ document.querySelectorAll("[data-ticket-conversation]").forEach((conversation) =
 
     const updateState = () => {
         const state = stateSelect.value;
+        /* A server-resolved ticket stays read-only even when another preview is selected. */
         const resolved = ticketResolved || state === "resolved";
         const visiblePanel = ["normal", "resolved"].includes(state) ? "messages" : state;
 
@@ -21,9 +24,11 @@ document.querySelectorAll("[data-ticket-conversation]").forEach((conversation) =
         conversation.querySelector("[data-resolved-notice]").classList.toggle("hidden", !resolved);
         scrollArea.setAttribute("aria-busy", String(state === "loading"));
         scrollArea.scrollTop = 0;
-        reply.placeholder = resolved
-            ? "This ticket is resolved."
-            : state === "loading" ? "Loading messages…" : "Write your reply...";
+        if (reply) {
+            reply.placeholder = resolved
+                ? "This ticket is resolved."
+                : state === "loading" ? "Loading messages…" : "Write your reply...";
+        }
         feedback.textContent = state === "loading" ? "Preview: loading messages." : "";
     };
 

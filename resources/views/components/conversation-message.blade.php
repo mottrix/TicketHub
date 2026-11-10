@@ -1,4 +1,4 @@
-@props(['name', 'initials', 'time', 'datetime', 'agent' => false, 'message'])
+@props(['name', 'initials', 'time', 'datetime', 'agent' => false,])
 
 <article {{ $attributes->class(['flex min-w-0 items-start gap-2.5 sm:gap-3', 'flex-row-reverse' => !$agent]) }}
     aria-label="{{ $name }}, {{ $agent ? 'Support agent' : 'Customer' }}, {{ $time }}">

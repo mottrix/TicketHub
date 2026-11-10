@@ -1,3 +1,5 @@
+/* Registration adds inline required/email checks and password matching on top of
+   the shared authentication script. Laravel handles account creation after submission. */
 (() => {
   const form = document.querySelector('[data-register-form]');
   if (!form) return;
@@ -17,6 +19,7 @@
     let message = '';
     if (input.validity.valueMissing || (input.name === 'name' && !input.value.trim())) message = empty[input.name];
     else if (input.validity.typeMismatch) message = 'Enter a valid email address.';
+    else if (input.validity.tooShort) message = 'Use at least 8 characters for your password.';
     else if (input === confirmation && input.value !== password.value) message = 'Your passwords do not match.';
     input.setAttribute('aria-invalid', String(Boolean(message)));
     form.querySelector(`[data-error="${input.name}"]`).textContent = message;
@@ -27,6 +30,7 @@
     input.addEventListener('blur', () => validate(input));
     input.addEventListener('input', () => {
       if (input.getAttribute('aria-invalid') === 'true') validate(input);
+      /* Editing the original password can invalidate an already entered confirmation. */
       if (input === password && confirmation.value) validate(confirmation);
     });
   });

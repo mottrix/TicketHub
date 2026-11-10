@@ -6,6 +6,8 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
     plugins: [
         laravel({
+            /* Blade @vite calls reference these build entrypoints. Shared modules such
+               as ticket-conversation.js are bundled through their importing entrypoint. */
             input: [
                 "resources/css/app.css",
                 "resources/js/app.js",
@@ -18,10 +20,12 @@ export default defineConfig({
                 "resources/js/edit-ticket.js",
                 "resources/js/create-ticket.js",
             ],
+            /* Reload during development when Laravel templates and related files change. */
             refresh: true,
             fonts: [
                 bunny("Instrument Sans", {
                     weights: [400, 500, 600],
+                    optimizedFallbacks: false,
                 }),
             ],
         }),

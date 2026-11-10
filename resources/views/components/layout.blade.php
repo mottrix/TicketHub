@@ -7,8 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="color-scheme" content="light dark">
+    {{-- Apply the saved dashboard theme before styles render to avoid a light/dark flash.
+         app.js handles later clicks using the same "theme" storage key and root class. --}}
     <script>
-        const savedTheme = localStorage.getItem("theme");
+        let savedTheme;
+        try {
+            savedTheme = localStorage.getItem("theme");
+        } catch {}
         const systemDark = window.matchMedia(
             "(prefers-color-scheme: dark)"
         ).matches;
@@ -18,9 +23,11 @@
             savedTheme ? savedTheme === "dark" : systemDark
         );
     </script>
-    @vite(['resources/css/app.css', 'resources/css/create-ticket.css', 'resources/css/edit-ticket.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <title>{{ $docTitle }}</title>
+    {{-- Both ticket forms share edit-ticket.js; other dashboard pages need only app.js. --}}
     @if (request()->routeIs('create', 'ticket.edit'))
+        @vite('resources/css/edit-ticket.css')
         @vite('resources/js/edit-ticket.js')
     @endif
 </head>
@@ -35,6 +42,7 @@
                 @if (session('success'))
                     <div role="status">{{ session('success') }}</div>
                 @endif
+                {{-- Pages extend this layout and supply their content section here. --}}
                 @yield('content')
             </main>
         </div>

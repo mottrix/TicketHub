@@ -21,7 +21,7 @@ html.theme-transition * {
         transition-duration: 0.01ms;
     }
 }
-@source "../views/auth/login.blade.php";
+@source "../views/Auth/login.blade.php";
 @source "../views/components/ticket-ecosystem.blade.php";
 
 

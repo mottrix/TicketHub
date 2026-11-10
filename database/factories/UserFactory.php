@@ -13,12 +13,13 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
+     * Reuse one hash of the known test password to avoid hashing for every factory user.
      */
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
+     * Create a verified test user with password "password"; omitted role defaults to
+     * "user" in the database. Tests can override role to exercise admin permissions.
      *
      * @return array<string, mixed>
      */
@@ -34,7 +35,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Opt out of the verified default when a test needs an unverified account.
      */
     public function unverified(): static
     {

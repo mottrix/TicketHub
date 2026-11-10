@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Add ownership while allowing older tickets to remain unowned; no backfill runs.
+     * Deleting a user deletes their owned tickets rather than leaving user_id null.
+     * The later messages migration also cascades deletion from tickets to replies.
      */
     public function up(): void
     {
@@ -20,7 +22,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Remove the ownership foreign key and column, losing existing owner assignments.
      */
     public function down(): void
     {

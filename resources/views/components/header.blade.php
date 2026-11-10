@@ -9,14 +9,19 @@
         </svg>
     </button>
 
-    <form role="search" class="relative w-full max-w-md">
+    <form role="search" action="{{ route('index') }}" method="GET" class="relative w-full max-w-md">
+        @foreach (['status', 'userID', 'table-filter'] as $filter)
+            @if (is_scalar(request($filter)) && request()->filled($filter))
+                <input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">
+            @endif
+        @endforeach
         <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.3-4.3"></path>
         </svg>
-        <input type="search" name="search" placeholder="Search tickets..." aria-label="Search tickets"
+        <input type="search" name="search" value="{{ is_string(request('search')) ? request('search') : '' }}" maxlength="160" placeholder="Search tickets..." aria-label="Search tickets"
             class="h-10 w-full rounded-lg border border-slate-300 bg-slate-50 py-2 pl-10 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:bg-slate-800 dark:focus:ring-blue-400/20">
     </form>
     <div class="ml-auto flex items-center gap-2 sm:gap-3">
@@ -33,7 +38,7 @@
             <div class="group relative">
                 <button type="button" aria-label="User profile"
                     class="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-800 text-sm font-semibold text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:bg-slate-700 dark:hover:bg-slate-600">
-                    <span aria-hidden="true">{{ strtoupper(substr(auth()->user()->name, 0, 2)) }}</span>
+                    <span aria-hidden="true">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 2)) }}</span>
                 </button>
 
                 <div
@@ -57,7 +62,7 @@
                             @csrf
 
                             <button
-                                class=" w-30 h-8 hover: outline-red-600 hover:outline-2 rounded-3xl hover:bg-red-400 pointer-coarse: text-gray-900 dark:text-gray-50""type="submit">
+                                class="h-8 rounded-lg px-4 text-rose-600 hover:bg-rose-50 focus-visible:outline-2 focus-visible:outline-rose-600 dark:text-rose-300 dark:hover:bg-rose-950/60" type="submit">
                                 Logout
                             </button>
                         </form>

@@ -1,5 +1,5 @@
 @import "./tickethub-login.css";
-@source "../views/auth/register.blade.php";
+@source "../views/Auth/register.blade.php";
 /* Registration-only additions. Existing layout, theme and controls are unchanged. */
 .th-login .th-signin {
     margin: 22px 0 0;

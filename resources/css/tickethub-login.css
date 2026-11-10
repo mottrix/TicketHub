@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@source "../views/auth/login.blade.php";
+@source "../views/Auth/login.blade.php";
 @source "../views/components/ticket-ecosystem.blade.php";
 @custom-variant dark (&:where([data-th-theme="dark"], [data-th-theme="dark"] *));
 @theme {

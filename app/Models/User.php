@@ -11,6 +11,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * A signed-in customer or administrator who can own tickets and author replies.
+ *
+ * Registration can fill only name/email/password, so a submitted role cannot grant
+ * administrator access. The database supplies the ordinary customer role, "user".
+ * Hidden credentials are omitted when the model is converted to an array or JSON.
+ */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -19,7 +26,7 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * Get the attributes that should be cast.
+     * Read verification timestamps as dates and hash passwords assigned to the model.
      *
      * @return array<string, string>
      */
@@ -31,18 +38,19 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Only the exact stored role "admin" grants administrator permissions.
+     */
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
 
+    /**
+     * Owned tickets; creating through this relationship sets user_id to this user.
+     */
     public function tickets(): HasMany
     {
-        return $this->hasMany(ticket::class, 'user_id');
-    }
-
-    public function messages(): HasMany
-    {
-        return $this->hasMany(message::class, 'user_id');
+        return $this->hasMany(Ticket::class, 'user_id');
     }
 }

@@ -19,7 +19,7 @@ test('guests must log in for every ticket action', function (string $method, str
 ]);
 
 test('the dashboard shows tickets and counts each status', function () {
-    TicketFactory::new()->create(['ticket_name' => 'Open issue']);
+    TicketFactory::new()->create(['title' => 'Open issue']);
     TicketFactory::new()->create(['status' => 'in_progress']);
     TicketFactory::new()->create(['status' => 'closed']);
 
@@ -48,12 +48,12 @@ test('valid tickets are persisted with mapped fields and an open status', functi
     ])->assertRedirect(route('index'))->assertSessionHas('success');
 
     $this->assertDatabaseHas('tickets', [
-        'ticket_name' => 'Cannot log in',
+        'title' => 'Cannot log in',
         'description' => 'The password reset link does not arrive.',
-        'ticket_priority' => 'high',
+        'priority' => 'high',
         'status' => 'open',
     ]);
-    $this->assertDatabaseMissing('tickets', ['ticket_code' => 42]);
+    $this->assertDatabaseCount('tickets', 1);
 });
 
 test('invalid creation input is rejected without saving a ticket', function (array $payload, array $errors) {
@@ -71,7 +71,7 @@ test('invalid creation input is rejected without saving a ticket', function (arr
 ]);
 
 test('show and edit display the bound ticket with escaped content', function (string $routeName) {
-    $ticket = TicketFactory::new()->create(['ticket_name' => '<script>alert(1)</script>']);
+    $ticket = TicketFactory::new()->create(['title' => '<script>alert(1)</script>']);
 
     $this->actingAs($ticket->user)->get(route($routeName, $ticket))
         ->assertOk()->assertSee('<script>alert(1)</script>')
@@ -87,8 +87,8 @@ test('ticket details display editor entities and paragraphs as readable text', f
         ->assertOk()->assertSee("A & B\nSecond line");
 });
 
-test('updates persist ticket changes without changing its code', function () {
-    $ticket = TicketFactory::new()->create(['ticket_code' => 123456789]);
+test('updates persist ticket changes without changing its identity', function () {
+    $ticket = TicketFactory::new()->create();
 
     $this->actingAs(User::factory()->create(['role' => 'admin']))->put(route('ticket.update', $ticket), [
         'title' => 'Updated issue', 'description' => 'More details',
@@ -96,20 +96,20 @@ test('updates persist ticket changes without changing its code', function () {
     ])->assertRedirect(route('index'))->assertSessionHas('success');
 
     $this->assertDatabaseHas('tickets', [
-        'id' => $ticket->id, 'ticket_name' => 'Updated issue',
-        'description' => 'More details', 'ticket_priority' => 'low',
-        'status' => 'pending', 'ticket_code' => 123456789,
+        'id' => $ticket->id, 'title' => 'Updated issue',
+        'description' => 'More details', 'priority' => 'low',
+        'status' => 'pending',
     ]);
 });
 
 test('invalid updates leave the ticket unchanged', function () {
-    $ticket = TicketFactory::new()->create(['ticket_name' => 'Original issue']);
+    $ticket = TicketFactory::new()->create(['title' => 'Original issue']);
 
     $this->actingAs(User::factory()->create(['role' => 'admin']))->put(route('ticket.update', $ticket), [
         'title' => '', 'description' => '', 'priority' => 'urgent', 'status' => 'invalid',
     ])->assertSessionHasErrors(['title', 'description', 'priority', 'status']);
 
-    $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'ticket_name' => 'Original issue', 'status' => 'open']);
+    $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'title' => 'Original issue', 'status' => 'open']);
 });
 
 test('deleting a ticket removes it from the database', function () {
@@ -127,3 +127,25 @@ test('missing tickets return 404', function (string $method, string $uri) {
     ['get', '/tickets/999'], ['get', '/edit/999'],
     ['put', '/tickets/999'], ['delete', '/tickets/999'],
 ]);
+
+test('ticket forms remain renderable after rejecting array inputs', function (string $action) {
+    $ticket = TicketFactory::new()->create();
+    $this->actingAs($ticket->user);
+    $formRoute = $action === 'create' ? route('create') : route('ticket.edit', $ticket);
+    $payload = ['title' => ['invalid'], 'description' => ['invalid'], 'priority' => ['invalid']];
+
+    $response = $action === 'create'
+        ? $this->from($formRoute)->post(route('ticket.store'), $payload)
+        : $this->from($formRoute)->put(route('ticket.update', $ticket), $payload);
+    $response->assertRedirect($formRoute)->assertSessionHasErrors(['title', 'description', 'priority']);
+
+    $this->get($formRoute)->assertOk();
+})->with(['create', 'edit']);
+
+test('ticket details ignore malformed search control values on unrelated routes', function () {
+    $ticket = TicketFactory::new()->create();
+
+    $this->actingAs($ticket->user)->get(route('ticket.show', [
+        'ticket' => $ticket, 'search' => ['invalid'], 'status' => ['invalid'],
+    ]))->assertOk();
+});

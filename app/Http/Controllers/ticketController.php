@@ -2,33 +2,48 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Message;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * Coordinates the ticket screens and writes reached through routes/web.php.
+ *
+ * Route binding supplies the ticket from the URL. TicketPolicy decides access;
+ * validation decides which submitted fields are allowed to reach the database.
+ */
 class ticketController extends Controller
 {
+    /**
+     * Build the dashboard from validated GET filters.
+     *
+     * Apply owner access first, then clone that query for the summary cards.
+     * Status filtering narrows the table only, so the cards still summarize all
+     * tickets accessible for the selected owner. Legacy status strings share
+     * the current Pending/Close groups; ID breaks ties when timestamps match.
+     */
     public function index(Request $request): View
     {
         $validated = $request->validate([
             'userID' => ['nullable', 'integer', 'exists:users,id'],
             'status' => ['nullable', 'in:open,pending,closed'],
             'table-filter' => ['nullable', 'in:newest,oldest'],
+            'search' => ['nullable', 'string', 'max:160'],
         ]);
 
-        $query = Ticket::query();
-        $users = User::all();
+        $query = Ticket::whereNull('parent_id')->with('user');
+        $users = $request->user()->isAdmin() ? User::orderBy('name')->get() : collect();
 
-        // Admin can filter tickets by user ID if provided
         if ($request->user()->isAdmin() && ! empty($validated['userID'])) {
             $query->where('user_id', $validated['userID']);
         }
 
-        // user can only see their own tickets if they are not an admin
         if (! $request->user()->isAdmin()) {
             $query->where('user_id', $request->user()->id);
         }
@@ -37,7 +52,19 @@ class ticketController extends Controller
         $closeTickets = (clone $query)->whereIn('status', ['closed', 'close', 'resolved'])->count();
         $openTickets = (clone $query)->where('status', 'open')->count();
 
-        //filter by status
+        if (isset($validated['search']) && $validated['search'] !== '') {
+            $search = $validated['search'];
+            $query->where(function (Builder $query) use ($search): void {
+                $query->where('title', 'like', '%'.$search.'%')
+                    ->orWhere('description', 'like', '%'.$search.'%');
+
+                $ticketId = filter_var($search, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                if ($ticketId !== false) {
+                    $query->orWhere('id', $ticketId);
+                }
+            });
+        }
+
         if (! empty($validated['status'])) {
             $statuses = [
                 'open' => ['open'],
@@ -48,18 +75,26 @@ class ticketController extends Controller
             $query->whereIn('status', $statuses[$validated['status']]);
         }
 
-        //filter by newest or oldest
         $direction = ($validated['table-filter'] ?? 'newest') === 'oldest' ? 'asc' : 'desc';
         $tickets = $query->orderBy('created_at', $direction)->orderBy('id', $direction)->get();
 
         return view('tickets.index', compact('tickets', 'totalTickets', 'pendingTickets', 'closeTickets', 'openTickets', 'users'));
     }
 
+    /**
+     * Render the form; its editor and priority buttons submit hidden fields.
+     */
     public function create(): View
     {
         return view('tickets.create');
     }
 
+    /**
+     * Map form names to database columns and create an open ticket for this user.
+     *
+     * Owner and initial status come from the server, not submitted values.
+     * Root tickets always have a null parent, regardless of submitted input.
+     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -68,15 +103,11 @@ class ticketController extends Controller
             'priority' => ['required', 'in:low,medium,high'],
         ]);
 
-        do {
-            $ticketCode = random_int(100000000, 999999999);
-        } while (Ticket::where('ticket_code', $ticketCode)->exists());
-
         $request->user()->tickets()->create([
-            'ticket_code' => $ticketCode,
-            'ticket_name' => $validated['title'],
+            'parent_id' => null,
+            'title' => $validated['title'],
             'description' => $validated['description'],
-            'ticket_priority' => $validated['priority'],
+            'priority' => $validated['priority'],
             'status' => 'open',
         ]);
 
@@ -84,6 +115,13 @@ class ticketController extends Controller
             ->with('success', 'Ticket created successfully.');
     }
 
+    /**
+     * Show one authorized ticket and only the replies associated with its ID.
+     *
+     * Convert editor HTML to plain text while preserving paragraph breaks;
+     * Blade escapes the resulting text. Eager load child replies and their authors
+     * in chronological order; the conversation uses only Ticket records.
+     */
     public function show(Ticket $ticket): View
     {
         Gate::authorize('show', $ticket);
@@ -91,12 +129,45 @@ class ticketController extends Controller
         $descriptionText = preg_replace('/<\/(?:div|p|li)>|<br\s*\/?>/i', "\n", $ticket->description ?? '');
         $descriptionText = trim(html_entity_decode(strip_tags($descriptionText), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
 
-        $messages = Message::query()->where('ticket_id', $ticket->id)
-            ->with('user')->oldest()->orderBy('id')->get();
+        $ticket->load([
+            'user',
+            'replies' => fn (HasMany $query): HasMany => $query->with('user')->oldest()->orderBy('id'),
+        ]);
 
-        return view('tickets.show', compact('ticket', 'descriptionText', 'messages'));
+        return view('tickets.show', compact('ticket', 'descriptionText'));
     }
 
+    /**
+     * Create a child Ticket using the root from the URL and the authenticated author.
+     */
+    public function storeReply(Request $request, Ticket $ticket): RedirectResponse
+    {
+        DB::transaction(function () use ($request, $ticket): void {
+            $root = Ticket::whereNull('parent_id')->lockForUpdate()->findOrFail($ticket->id);
+            Gate::authorize('show', $root);
+
+            abort_if($root->isClosed(), 403, 'Replies are disabled for closed tickets.');
+
+            $validated = $request->validate([
+                'reply-message' => ['required', 'string', 'max:20000'],
+            ]);
+
+            $request->user()->tickets()->create([
+                'parent_id' => $root->id,
+                'title' => null,
+                'description' => $validated['reply-message'],
+                'priority' => $root->priority,
+                'status' => $root->status,
+            ]);
+        });
+
+        return redirect()->route('ticket.show', $ticket)
+            ->with('success', 'Reply sent successfully.');
+    }
+
+    /**
+     * Require edit permission before exposing the existing ticket to the form.
+     */
     public function edit(Ticket $ticket): View
     {
         Gate::authorize('update', $ticket);
@@ -104,6 +175,14 @@ class ticketController extends Controller
         return view('tickets.edit', compact('ticket'));
     }
 
+    /**
+     * Save ticket details without letting an owner change status or ownership.
+     *
+     * Owners may omit status or send an unchanged current value (open, pending,
+     * closed); unchanged legacy values still fail validation. A changed value
+     * needs the separate admin-only updateStatus ability. Only authorized admins
+     * add status to the update array; hiding controls is not the security check.
+     */
     public function update(Request $request, Ticket $ticket): RedirectResponse
     {
         Gate::authorize('update', $ticket);
@@ -122,9 +201,10 @@ class ticketController extends Controller
         ]);
 
         $attributes = [
-            'ticket_name' => $validated['title'],
+            'title' => $validated['title'],
+
             'description' => $validated['description'],
-            'ticket_priority' => $validated['priority'],
+            'priority' => $validated['priority'],
         ];
 
         if ($canUpdateStatus) {
@@ -136,12 +216,15 @@ class ticketController extends Controller
         return redirect()->route('index')->with('success', 'Ticket updated successfully.');
     }
 
-    public function updateStatus(Request $request, Ticket $ticket, User $user): RedirectResponse
+    /**
+     * Handle the details-page status dropdown independently of the edit form.
+     *
+     * Persist closed even though the visible option label is Close.
+     */
+    public function updateStatus(Request $request, Ticket $ticket): RedirectResponse
     {
 
         Gate::authorize('updateStatus', $ticket);
-
-        // Gate::authorize('updateStatus' , $user );
 
         $validated = $request->validate([
             'status' => ['required', 'in:open,pending,closed'],
@@ -153,6 +236,9 @@ class ticketController extends Controller
 
     }
 
+    /**
+     * Delete an authorized root; foreign keys cascade child tickets and legacy messages.
+     */
     public function destroy(Ticket $ticket): RedirectResponse
     {
         Gate::authorize('delete', $ticket);

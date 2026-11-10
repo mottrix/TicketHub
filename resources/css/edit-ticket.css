@@ -594,3 +594,6 @@ button:disabled {
         transition: none !important;
     }
 }
+
+.editor-content ul { list-style-type: disc; }
+.editor-content ol { list-style-type: decimal; }

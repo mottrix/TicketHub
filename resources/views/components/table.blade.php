@@ -1,8 +1,11 @@
 <div
     class="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 sm:p-6">
 
-    {{-- Table Filters --}}
+    {{-- All filters share one GET form, so changing any select submits the others too.
+         request() restores the selected options after the controller filters the tickets. --}}
     <form action="{{ route('index') }}" method="GET" class="mb-5 flex flex-wrap items-center justify-between gap-3">
+
+        <input type="hidden" name="search" value="{{ request('search') }}">
 
         @if (auth()->user()->role === 'admin')
 
@@ -77,9 +80,10 @@
                         {{-- Title --}}
                         <td class="px-4 py-4">
                             <div class="font-semibold text-slate-800 dark:text-slate-100">
-                                {{ $ticket->ticket_name }}
+                                {{ $ticket->title }}
                             </div>
 
+                            {{-- Convert editor HTML into a short plain-text preview; Blade escapes the result. --}}
                             <div class="mt-1 text-xs text-slate-400 dark:text-slate-500">
                                 {{ Str::limit(html_entity_decode(strip_tags($ticket->description ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'), 35) }}
                             </div>
@@ -90,13 +94,13 @@
                             <span @class([
                                 'rounded-lg px-3 py-1 text-xs font-medium',
                                 'bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300' =>
-                                    $ticket->ticket_priority === 'high',
+                                    $ticket->priority === 'high',
                                 'bg-orange-50 text-orange-700 dark:bg-orange-950/60 dark:text-orange-300' =>
-                                    $ticket->ticket_priority === 'medium',
+                                    $ticket->priority === 'medium',
                                 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' =>
-                                    $ticket->ticket_priority === 'low',
+                                    $ticket->priority === 'low',
                             ])>
-                                {{ ucfirst($ticket->ticket_priority) }}
+                                {{ ucfirst($ticket->priority) }}
                             </span>
                         </td>
 
@@ -107,9 +111,9 @@
 
                         {{-- Created At --}}
                         <td class="px-4 py-4 text-slate-600 dark:text-slate-300">
-                            <div>{{ $ticket->created_at->format('M d, Y') }}</div>
+                            <div>{{ $ticket->created_at?->format('M d, Y') }}</div>
                             <div class="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                                {{ $ticket->created_at->format('h:i A') }}
+                                {{ $ticket->created_at?->format('h:i A') }}
                             </div>
                         </td>
 
@@ -123,19 +127,19 @@
                                     <span>👁</span>
                                 </a>
 
-                                @if (!auth()->user()->isAdmin())
-                                    
                                 {{-- Edit --}}
+                                @can('update', $ticket)
                                 <a href="{{ route('ticket.edit', $ticket) }}" aria-label="Edit ticket"
                                     class="rounded-lg border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-amber-50 hover:text-amber-600 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-amber-950/60 dark:hover:text-amber-300">
                                     <span>✎</span>
                                 </a>
-                                @endif
+                                @endcan
 
                                 {{-- Delete --}}
                                 <form action="{{ route('ticket.destroy', $ticket) }}" method="POST"
                                     onsubmit="return confirm('Are you sure you want to delete this ticket?')">
 
+                                    {{-- HTML submits POST; Laravel reads the hidden _method field as DELETE. --}}
                                     @csrf
                                     @method('DELETE')
 
@@ -153,7 +157,7 @@
                 @empty
 
                     <tr>
-                        <td colspan="6" class="py-10 text-center text-slate-400 dark:text-slate-500">
+                        <td colspan="{{ auth()->user()->isAdmin() ? 7 : 6 }}" class="py-10 text-center text-slate-400 dark:text-slate-500">
                             No tickets found.
                         </td>
                     </tr>

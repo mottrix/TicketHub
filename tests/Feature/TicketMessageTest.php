@@ -22,7 +22,7 @@ test('the reply form targets the specific ticket being viewed', function (string
     $form = (new DOMXPath($document))->query('//form[.//textarea[@name="reply-message"]]')->item(0);
 
     expect($form)->not->toBeNull();
-    expect($form->getAttribute('action'))->toBe(route('ticket.message.store', $ticket));
+    expect($form->getAttribute('action'))->toBe(route('ticket.reply.store', $ticket));
 })->with(['user', 'admin']);
 
 test('a reply is saved against the route ticket and authenticated author', function (string $role) {
@@ -30,15 +30,15 @@ test('a reply is saved against the route ticket and authenticated author', funct
     $otherTicket = TicketFactory::new()->create();
     $ticket = TicketFactory::new()->create(['user_id' => $role === 'admin' ? $otherTicket->user_id : $author->id]);
 
-    $this->actingAs($author)->post(route('ticket.message.store', $ticket), [
+    $this->actingAs($author)->post(route('ticket.reply.store', $ticket), [
         'reply-message' => 'Please check this specific ticket.',
         'ticket_id' => $otherTicket->id, 'user_id' => $otherTicket->user_id,
     ])->assertRedirect(route('ticket.show', $ticket))->assertSessionHasNoErrors();
 
-    $this->assertDatabaseCount('messages', 1);
-    $this->assertDatabaseHas('messages', [
-        'ticket_id' => $ticket->id, 'user_id' => $author->id,
-        'message' => 'Please check this specific ticket.',
+    $this->assertDatabaseCount('tickets', 3);
+    $this->assertDatabaseHas('tickets', [
+        'parent_id' => $ticket->id, 'user_id' => $author->id,
+        'description' => 'Please check this specific ticket.',
     ]);
 })->with(['user', 'admin']);
 
@@ -46,10 +46,10 @@ test('invalid replies are rejected without saving a message', function (array $p
     $ticket = TicketFactory::new()->create();
 
     $this->actingAs($ticket->user)->from(route('ticket.show', $ticket))
-        ->post(route('ticket.message.store', $ticket), $payload)
+        ->post(route('ticket.reply.store', $ticket), $payload)
         ->assertRedirect(route('ticket.show', $ticket))->assertSessionHasErrors('reply-message');
 
-    $this->assertDatabaseCount('messages', 0);
+    $this->assertDatabaseCount('tickets', 1);
 })->with([
     'missing' => [[]],
     'empty' => [['reply-message' => '   ']],
@@ -60,47 +60,47 @@ test('invalid replies are rejected without saving a message', function (array $p
 test('a user cannot reply to another users ticket', function () {
     $ticket = TicketFactory::new()->create();
 
-    $this->actingAs(User::factory()->create())->post(route('ticket.message.store', $ticket), [
+    $this->actingAs(User::factory()->create())->post(route('ticket.reply.store', $ticket), [
         'reply-message' => 'Unauthorized reply',
-    ])->assertForbidden();
+    ])->assertNotFound();
 
-    $this->assertDatabaseCount('messages', 0);
+    $this->assertDatabaseCount('tickets', 1);
 });
 
 test('guests must log in before replying', function () {
     $ticket = TicketFactory::new()->create();
 
-    $this->post(route('ticket.message.store', $ticket), ['reply-message' => 'Guest reply'])
+    $this->post(route('ticket.reply.store', $ticket), ['reply-message' => 'Guest reply'])
         ->assertRedirect(route('login'));
 
-    $this->assertDatabaseCount('messages', 0);
+    $this->assertDatabaseCount('tickets', 1);
 });
 
 test('closed tickets do not accept replies even through a direct request', function (string $status) {
     $ticket = TicketFactory::new()->create(['status' => $status]);
 
-    $this->actingAs($ticket->user)->post(route('ticket.message.store', $ticket), [
+    $this->actingAs($ticket->user)->post(route('ticket.reply.store', $ticket), [
         'reply-message' => 'Reply to a closed ticket',
     ])->assertForbidden();
 
-    $this->assertDatabaseCount('messages', 0);
+    $this->assertDatabaseCount('tickets', 1);
 })->with(['closed', 'close', 'resolved']);
 
 test('replying to a missing ticket returns not found', function () {
     $this->actingAs(User::factory()->create())
-        ->post(route('ticket.message.store', 999), ['reply-message' => 'Missing ticket'])
+        ->post(route('ticket.reply.store', 999), ['reply-message' => 'Missing ticket'])
         ->assertNotFound();
 
-    $this->assertDatabaseCount('messages', 0);
+    $this->assertDatabaseCount('tickets', 0);
 });
 
 test('the conversation renders each saved reply once and only for the selected ticket', function () {
     $ticket = TicketFactory::new()->create();
     $otherTicket = TicketFactory::new()->create();
     $admin = User::factory()->create(['role' => 'admin', 'name' => 'Support Admin']);
-    $ticket->user->messages()->create(['ticket_id' => $ticket->id, 'message' => 'Customer question <script>alert(1)</script>']);
-    $admin->messages()->create(['ticket_id' => $ticket->id, 'message' => 'Support response']);
-    $otherTicket->user->messages()->create(['ticket_id' => $otherTicket->id, 'message' => 'Private other ticket reply']);
+    TicketFactory::new()->create(['parent_id' => $ticket->id, 'user_id' => $ticket->user_id, 'title' => null, 'description' => 'Customer question <script>alert(1)</script>']);
+    TicketFactory::new()->create(['parent_id' => $ticket->id, 'user_id' => $admin->id, 'title' => null, 'description' => 'Support response']);
+    TicketFactory::new()->create(['parent_id' => $otherTicket->id, 'user_id' => $otherTicket->user_id, 'title' => null, 'description' => 'Private other ticket reply']);
 
     $response = $this->actingAs($ticket->user)->get(route('ticket.show', $ticket));
 

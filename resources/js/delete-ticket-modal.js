@@ -1,3 +1,5 @@
+/* Standalone modal preview: opening locks page scrolling and closing restores focus.
+   The delete button only shows a toast here; actual ticket deletion uses Blade forms. */
 (() => {
       'use strict';
       const overlay = document.getElementById('overlay');
@@ -5,6 +7,7 @@
       const cancelBtn = document.getElementById('cancelBtn');
       const deleteBtn = document.getElementById('deleteBtn');
       const toast = document.getElementById('toast');
+      if (!overlay || !modal || !cancelBtn || !deleteBtn || !toast) return;
       let lastFocused = document.activeElement;
 
       function closeModal(showToast = false) {
@@ -24,6 +27,7 @@
         cancelBtn.focus();
       }
 
+      /* Cycle Tab between the dialog's two buttons while the overlay is open. */
       function trapFocus(event) {
         if (event.key !== 'Tab') return;
         const focusable = [cancelBtn, deleteBtn];

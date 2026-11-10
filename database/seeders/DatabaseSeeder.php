@@ -11,15 +11,14 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * The default seed command creates one factory-backed customer account.
+     * TicketSeeder is not called here and must be run explicitly
+     * after their required users/tickets have been prepared. No admin is created here.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
+        User::firstOrCreate(['email' => 'test@example.com'], User::factory()->raw([
             'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        ]));
     }
 }

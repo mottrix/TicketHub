@@ -16,12 +16,14 @@
                 </ul>
             </div>
         @endif
+        {{-- The shared editor script uses these IDs to populate named hidden fields.
+             old() restores submitted values after Laravel redirects back with validation errors. --}}
         <form class="form-card" id="ticketForm" method="POST" action="{{ route('ticket.store') }}" data-cancel-url="{{ route('index') }}">
             @csrf
-            <input type="hidden" name="description" id="descriptionInput" value="{{ old('description') }}">
-            <input type="hidden" name="priority" id="priorityInput" value="{{ old('priority', 'medium') }}">
+            <input type="hidden" name="description" id="descriptionInput" value="{{ is_string(old('description')) ? old('description') : '' }}">
+            <input type="hidden" name="priority" id="priorityInput" value="{{ is_string(old('priority', 'medium')) ? old('priority', 'medium') : 'medium' }}">
             <div class="field" id="titleField"><label for="title">Title <span class="required">*</span></label><input
-                    class="title-input" id="title" name="title" maxlength="160" value="{{ old('title') }}"
+                    class="title-input" id="title" name="title" maxlength="160" value="{{ is_string(old('title')) ? old('title') : '' }}"
                     placeholder="Enter a short and clear title" required />
                 <p class="form-error">Please enter a title for your ticket.</p>
             </div>
@@ -47,6 +49,7 @@
                                 stroke-width="2">
                                 <path d="m10 13 4-4M8 16H7a4 4 0 0 1 0-8h4m2 0h4a4 4 0 1 1 0 8h-4" />
                             </svg></button></div>
+                    {{-- This editable div has no form value; JavaScript copies its HTML to descriptionInput. --}}
                     <div id="description" class="editor-content" contenteditable="true" role="textbox" aria-multiline="true"
                         aria-labelledby="descriptionLabel" data-placeholder="Please provide as much detail as possible...">
                     </div>

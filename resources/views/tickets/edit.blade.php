@@ -15,17 +15,21 @@
                 </ul>
             </div>
         @endif
+        {{-- Reuse the create-form editor contract. old() prefers a failed submission over
+             stored ticket values; the hidden _method field makes this POST a Laravel PUT. --}}
         <form class="form-card" id="ticketForm" method="POST" action="{{ route('ticket.update', $ticket) }}" data-cancel-url="{{ route('index') }}">
             @csrf
             @method('PUT')
-            <input type="hidden" name="description" id="descriptionInput" value="{{ old('description', $ticket->description) }}">
-            <input type="hidden" name="priority" id="priorityInput" value="{{ old('priority', strtolower($ticket->ticket_priority)) }}">
+            <input type="hidden" name="description" id="descriptionInput" value="{{ is_string(old('description', $ticket->description)) ? old('description', $ticket->description) : $ticket->description }}">
+            <input type="hidden" name="priority" id="priorityInput" value="{{ is_string(old('priority', $ticket->priority)) ? old('priority', $ticket->priority) : $ticket->priority }}">
+            {{-- Match the policy-controlled status buttons below; legacy status names are
+                 mapped to the current form values before JavaScript selects a button. --}}
             @can('updateStatus', $ticket)
-                <input type="hidden" name="status" id="statusInput" value="{{ old('status', ['in_progress' => 'pending', 'close' => 'closed', 'resolved' => 'closed'][$ticket->status] ?? $ticket->status) }}">
+                <input type="hidden" name="status" id="statusInput" value="{{ is_string(old('status')) ? old('status') : (['in_progress' => 'pending', 'close' => 'closed', 'resolved' => 'closed'][$ticket->status] ?? $ticket->status) }}">
             @endcan
             <div class="field" id="titleField"><label for="title">Title <span class="required">*</span></label><input
                     class="title-input" id="title" name="title" maxlength="160"
-                    placeholder="Enter a short and clear title" value="{{ old('title', $ticket->ticket_name) }}" required />
+                    placeholder="Enter a short and clear title" value="{{ is_string(old('title', $ticket->title)) ? old('title', $ticket->title) : $ticket->title }}" required />
                 <p class="form-error">Please enter a title for your ticket.</p>
             </div>
             <div class="field" id="descriptionField"><label id="descriptionLabel">Description <span

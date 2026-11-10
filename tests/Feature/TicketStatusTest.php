@@ -48,14 +48,14 @@ test('the edit form submits pending rather than the retired in progress status',
 })->with(['pending', 'in_progress']);
 
 test('changing status from ticket details saves only the status and preserves the selected choice', function (string $status) {
-    $ticket = TicketFactory::new()->create(['ticket_name' => 'Original title', 'description' => 'Original details']);
+    $ticket = TicketFactory::new()->create(['title' => 'Original title', 'description' => 'Original details']);
 
     $response = $this->actingAs(User::factory()->create(['role' => 'admin']))->patch(route('ticket.status.update', $ticket), ['status' => $status]);
 
     $response->assertRedirect(route('ticket.show', $ticket))->assertSessionHasNoErrors();
     $this->assertDatabaseHas('tickets', [
         'id' => $ticket->id, 'status' => $status,
-        'ticket_name' => 'Original title', 'description' => 'Original details',
+        'title' => 'Original title', 'description' => 'Original details',
     ]);
     $this->get(route('ticket.show', $ticket))->assertOk()
         ->assertSee('value="'.$status.'" selected', false);
@@ -107,7 +107,7 @@ test('ticket owners see the status but cannot select a different one', function 
 })->with(['ticket.show', 'ticket.edit']);
 
 test('ticket owners cannot change status through either update endpoint', function (string $method, string $routeName) {
-    $ticket = TicketFactory::new()->create(['status' => 'open', 'ticket_name' => 'Original title']);
+    $ticket = TicketFactory::new()->create(['status' => 'open', 'title' => 'Original title']);
 
     $this->actingAs($ticket->user)->{$method}(route($routeName, $ticket), [
         'title' => 'Changed title', 'description' => 'Changed details', 'priority' => 'low',
@@ -115,7 +115,7 @@ test('ticket owners cannot change status through either update endpoint', functi
     ])->assertForbidden();
 
     $this->assertDatabaseHas('tickets', [
-        'id' => $ticket->id, 'status' => 'open', 'ticket_name' => 'Original title',
+        'id' => $ticket->id, 'status' => 'open', 'title' => 'Original title',
     ]);
 })->with([['patch', 'ticket.status.update'], ['put', 'ticket.update']]);
 
@@ -127,8 +127,8 @@ test('ticket owners can edit other details without sending or changing status', 
     ])->assertRedirect(route('index'))->assertSessionHasNoErrors();
 
     $this->assertDatabaseHas('tickets', [
-        'id' => $ticket->id, 'ticket_name' => 'Updated title', 'description' => 'Updated details',
-        'ticket_priority' => 'high', 'status' => 'pending',
+        'id' => $ticket->id, 'title' => 'Updated title', 'description' => 'Updated details',
+        'priority' => 'high', 'status' => 'pending',
     ]);
 });
 
@@ -142,6 +142,6 @@ test('admins can change status through the full edit form', function (string $st
         ])->assertRedirect(route('index'))->assertSessionHasNoErrors();
 
     $this->assertDatabaseHas('tickets', [
-        'id' => $ticket->id, 'ticket_name' => 'Updated by admin', 'status' => $status,
+        'id' => $ticket->id, 'title' => 'Updated by admin', 'status' => $status,
     ]);
 })->with(['open', 'pending', 'closed']);

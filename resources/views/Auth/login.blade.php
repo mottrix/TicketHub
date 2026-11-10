@@ -33,11 +33,11 @@
                     <div class="th-eyebrow"><span></span> YOUR SUPPORT WORKSPACE</div>
                     <h1 id="welcome-title">Welcome back.</h1>
                     <p class="th-subtitle">Sign in to keep great support moving.</p>
-                    <form method="POST" action="{{ route('login') }}" data-login-form>
+                    <form method="POST" action="{{ route('login.post') }}" data-login-form>
                         @csrf
                         <div class="th-field"><label for="email">Email address</label><input id="email"
                                 name="email" type="email" autocomplete="username" inputmode="email"
-                                value="{{ old('email') }}" placeholder="you@company.com" required autofocus
+                                value="{{ is_string(old('email')) ? old('email') : '' }}" placeholder="you@company.com" required autofocus
                                 aria-describedby="email-error" @error('email') aria-invalid="true" @enderror>
                             <p id="email-error" class="th-error" data-error="email" aria-live="polite">
                                 @error('email')
